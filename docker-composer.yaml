@@ -3,3 +3,7 @@ services:
     image: devlikeapro/waha
     ports:
       - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - ./sessions:/app/.sessions
