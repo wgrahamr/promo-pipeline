@@ -1,9 +1,13 @@
+import os
+
 from flask import Flask, request
 import psycopg
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
-conn = psycopg.connect("postgresql://waha:oA0|.8Gjb31iq18S@localhost:5432/waha_app")
+load_dotenv()  # Carrega as variáveis de ambiente do arquivo .env
+conn = psycopg.connect(os.environ["DATABASE_URL"])
 
 @app.route('/waha', methods=['POST'])
 def receber_webhook():
