@@ -3,11 +3,12 @@ import os
 from flask import Flask, request
 import psycopg
 from dotenv import load_dotenv
+from psycopg.types.json import Jsonb
 
 app = Flask(__name__)
 
 load_dotenv()  # Carrega as variáveis de ambiente do arquivo .env
-conn = psycopg.connect(os.environ["DATABASE_URL"])
+conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
 
 @app.route('/waha', methods=['POST'])
 def receber_webhook():
