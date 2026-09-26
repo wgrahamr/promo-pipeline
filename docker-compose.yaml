@@ -1,12 +1,18 @@
 services:
   waha:
     image: devlikeapro/waha
+    restart: unless-stopped
     ports:
       - "3000:3000"
     env_file:
       - .env
     volumes:
       - ./sessions:/app/.sessions
+    environment:
+      WHATSAPP_HOOK_URL: http://host.docker.internal:8080/waha
+      WHATSAPP_HOOK_EVENTS: message
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
   
   postgres:
     image: postgres:16-alpine
