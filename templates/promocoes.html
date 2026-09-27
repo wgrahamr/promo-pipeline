@@ -136,9 +136,28 @@
 
         .oferta {
             display: grid;
-            grid-template-columns: 1fr auto;
-            gap: 8px 24px;
+            grid-template-columns: 56px 1fr auto;
+            gap: 8px 20px;
             padding: 20px;
+        }
+
+        .oferta > div {
+            min-width: 0;
+        }
+
+        .miniatura {
+            width: 56px;
+            height: 56px;
+            border-radius: 8px;
+            background: var(--fundo);
+            overflow: hidden;
+        }
+
+        .miniatura img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
 
         .oferta + .oferta {
@@ -184,6 +203,7 @@
             gap: 8px;
             padding: 3px 4px 3px 10px;
             color: var(--tinta);
+            max-width: 100%;
             border: 1.5px dashed var(--grafite);
             border-radius: 6px;
         }
@@ -192,6 +212,7 @@
             font-family: inherit;
             font-weight: 700;
             letter-spacing: 0.04em;
+            overflow-wrap: anywhere;
         }
 
         .copiar {
@@ -280,8 +301,9 @@
         /* Celular: preço embaixo do nome */
         @media (max-width: 520px) {
             .topo h1 { font-size: 36px; }
-            .oferta { grid-template-columns: 1fr; }
-            .preco { text-align: left; }
+            .oferta { grid-template-columns: 48px 1fr; gap: 8px 14px; }
+            .miniatura { width: 48px; height: 48px; }
+            .preco { grid-column: 2; text-align: left; }
             .botao { flex: 1; }
         }
     </style>
@@ -324,6 +346,11 @@
             <ul class="lista">
                 {% for p in promocoes %}
                     <li class="oferta">
+                        <div class="miniatura">
+                            {% if p.thumbnail %}
+                                <img src="data:image/jpeg;base64,{{ p.thumbnail }}" alt="" loading="lazy">
+                            {% endif %}
+                        </div>
                         <div>
                             {% if p.categoria %}
                                 <p class="categoria">{{ p.categoria }}</p>
