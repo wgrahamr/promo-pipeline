@@ -2,8 +2,8 @@ import os
 
 from flask import Flask, request
 import psycopg
-from dotenv import load_dotenv
 from psycopg.types.json import Jsonb
+from dotenv import load_dotenv
 
 app = Flask(__name__)
 
@@ -19,7 +19,10 @@ def receber_webhook():
     if not resultado:
         return "ignorado", 200
 
-    print(dados)
+    conn.execute(
+        "INSERT INTO mensagens_cruas (wa_message_id, chat_id, payload) VALUES (%s, %s, %s) ON CONFLICT (wa_message_id) DO NOTHING", (dados['payload']['id'], chat_id, Jsonb(dados['payload']))
+    )
+    print(f"Mensagem recebida e armazenada: {dados['payload']['id']} do chat {chat_id}")
     return "ok", 200
 
 app.run(host="0.0.0.0", port=8080, debug=True)
