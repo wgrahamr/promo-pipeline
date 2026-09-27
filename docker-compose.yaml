@@ -9,10 +9,8 @@ services:
     volumes:
       - ./sessions:/app/.sessions
     environment:
-      WHATSAPP_HOOK_URL: http://host.docker.internal:8080/waha
+      WHATSAPP_HOOK_URL: http://webhook:8080/waha
       WHATSAPP_HOOK_EVENTS: message
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
   
   postgres:
     image: postgres:16-alpine
@@ -24,3 +22,31 @@ services:
       POSTGRES_DB: waha_app
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U waha -d waha_app"]
+      interval: 5s
+      retries: 10
+
+  webhook:
+    build: .
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://waha:${POSTGRES_PASSWORD}@postgres:5432/waha_app
+    command: python3 app.py
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  processador:
+    build: .
+    command: python3 processador.py
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: postgresql://waha:${POSTGRES_PASSWORD}@postgres:5432/waha_app
+    depends_on:
+      postgres:
+        condition: service_healthy
