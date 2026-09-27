@@ -13,6 +13,7 @@ client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=os.environ["GROQ_API_KEY"],
 )
+MAX_TENTATIVAS = 5
 
 INSTRUCOES = """
                 Você extrai dados de mensagens de grupos de promoções do WhatsApp.
@@ -32,7 +33,7 @@ INSTRUCOES = """
                 """
 
 while True:
-    resultado = conn.execute("SELECT id, payload->>'body' AS texto FROM mensagens_cruas WHERE NOT processada ORDER BY id").fetchall()
+    resultado = conn.execute("SELECT id, payload->>'body' AS texto FROM mensagens_cruas WHERE NOT processada AND tentativas < %s ORDER BY id", (MAX_TENTATIVAS,)).fetchall()
     print('Mensagens sendo processadas: ', len(resultado))
     for mensagem_id, texto in resultado:
         try:
@@ -89,5 +90,6 @@ while True:
             conn.execute("UPDATE mensagens_cruas SET processada = true WHERE id = %s", (mensagem_id,))
         except Exception as erro:
             print("Erro ao processar mensagens:", mensagem_id, erro)
+            conn.execute("UPDATE mensagens_cruas SET tentativas = tentativas + 1, ultimo_erro = %s WHERE id = %s", (str(erro), mensagem_id))
         time.sleep(2)  # Aguarda 2 segundos antes de tentar novamente
     time.sleep(120)  # Aguarda 120 segundos antes de verificar novamente
