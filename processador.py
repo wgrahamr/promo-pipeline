@@ -48,6 +48,7 @@ for mensagem_id, texto in resultado:
         ],
         temperature=0,
         reasoning_effort="low",
+        response_format={"type": "json_object"},
     )
 
     promocao = json.loads(completion.choices[0].message.content)
