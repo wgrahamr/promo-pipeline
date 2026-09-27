@@ -46,9 +46,11 @@ def listar_promocoes():
     promocoes = conn.execute(
         f"""
         SELECT p.nome_item, p.preco_cheio, p.preco_desconto, p.cupom,
-               p.loja, p.url, c.nome AS categoria, p.deadline
+        p.loja, p.url, c.nome AS categoria, p.deadline,
+        m.payload->'_data'->>'thumbnail' AS thumbnail
         FROM promocoes p
         LEFT JOIN categorias c ON c.id = p.categoria_id
+        LEFT JOIN mensagens_cruas m ON m.id = p.mensagem_id
         {where}
         ORDER BY p.atualizada_em DESC
         LIMIT 50
