@@ -15,7 +15,7 @@ client = OpenAI(
     api_key=os.environ["GROQ_API_KEY"],
 )
 
-INSTRUCOES = """"
+INSTRUCOES = """
                 Você extrai dados de mensagens de grupos de promoções do WhatsApp.
                 Responda APENAS com um JSON, com exatamente estes campos:
 
