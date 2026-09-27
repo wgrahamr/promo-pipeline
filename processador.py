@@ -27,27 +27,31 @@ INSTRUCOES = """
                 - url: link da promoção
                 - loja: nome da loja, ou null
                 - meio_pagamento: ex.: Pix, cartão, boleto; ou null se não mencionado
+                - categoria_id: o número da categoria que melhor descreve o produto, escolhido da lista de categorias abaixo
+                - deadline: data e hora em que a promoção termina, no formato ISO 8601 com fuso -03:00 (ex.: 2026-09-30T23:59:00-03:00), ou null se a mensagem não indicar prazo. Use a data de envio para interpretar expressões como "hoje", "amanhã" ou "até meia-noite".
 
                 Se eh_promocao for false, todos os outros campos devem ser null.
                 Nunca invente informações que não estejam na mensagem.
                 """
 
 while True:
-    resultado = conn.execute("SELECT id, payload->>'body' AS texto FROM mensagens_cruas WHERE NOT processada AND tentativas < %s ORDER BY id", (MAX_TENTATIVAS,)).fetchall()
+    resultado = conn.execute("SELECT id, payload->>'body' AS texto, recebida_em AT TIME ZONE 'America/Sao_Paulo' FROM mensagens_cruas WHERE NOT processada AND tentativas < %s ORDER BY id", (MAX_TENTATIVAS,)).fetchall()
+    categorias = conn.execute("SELECT * FROM categorias").fetchall()
+    lista_categorias = "\n".join(f"{id_cat}: {nome}" for id_cat, nome in categorias)
     print('Mensagens sendo processadas: ', len(resultado))
-    for mensagem_id, texto in resultado:
+    for mensagem_id, texto, recebida_em in resultado:
         try:
             completion = client.chat.completions.create(
                 model="openai/gpt-oss-120b",
                 messages=[
                     {
                         "role": "system",
-                        "content": INSTRUCOES                    
+                        "content": INSTRUCOES + "\n\nCategorias:\n" + lista_categorias                 
                     },
 
                     {
                         "role": "user",
-                        "content": texto
+                        "content": f"Data de envio: {recebida_em}\n\nMensagem:\n{texto}"
                     }
                 ],
                 temperature=0,
@@ -62,8 +66,8 @@ while True:
             if promocao['eh_promocao']:
                 conn.execute(
                     """
-                    INSERT INTO promocoes (mensagem_id, nome_item, preco_cheio, preco_desconto, cupom, url, loja, meio_pagamento) VALUES 
-                    (%s, %s, %s, %s, %s, %s, %s, %s)
+                    INSERT INTO promocoes (mensagem_id, nome_item, preco_cheio, preco_desconto, cupom, url, loja, meio_pagamento, categoria_id, deadline) VALUES 
+                    (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (url) DO UPDATE SET 
                         
                         mensagem_id = EXCLUDED.mensagem_id,
@@ -73,6 +77,8 @@ while True:
                         cupom = EXCLUDED.cupom,
                         loja = EXCLUDED.loja,
                         meio_pagamento = EXCLUDED.meio_pagamento,
+                        categoria_id = EXCLUDED.categoria_id,
+                        deadline = EXCLUDED.deadline,
                         atualizada_em = NOW();
                         """
                         ,
@@ -84,7 +90,9 @@ while True:
                         promocao['cupom'],
                         promocao['url'],
                         promocao['loja'],
-                        promocao['meio_pagamento']
+                        promocao['meio_pagamento'],
+                        promocao['categoria_id'],
+                        promocao['deadline']
                         )
                     )
             conn.execute("UPDATE mensagens_cruas SET processada = true WHERE id = %s", (mensagem_id,))
