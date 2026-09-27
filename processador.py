@@ -8,8 +8,6 @@ from dotenv import load_dotenv
 load_dotenv()
 conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
 
-resultado = conn.execute("SELECT id, payload->>'body' AS texto FROM mensagens_cruas WHERE NOT processada").fetchall()
-
 client = OpenAI(
     base_url="https://api.groq.com/openai/v1",
     api_key=os.environ["GROQ_API_KEY"],
@@ -32,6 +30,8 @@ INSTRUCOES = """
                 Nunca invente informações que não estejam na mensagem.
                 """
 
+
+resultado = conn.execute("SELECT id, payload->>'body' AS texto FROM mensagens_cruas WHERE NOT processada").fetchall()
 for mensagem_id, texto in resultado:
     completion = client.chat.completions.create(
         model="openai/gpt-oss-120b",
@@ -55,3 +55,32 @@ for mensagem_id, texto in resultado:
     print('Dicionário: ', promocao)
     print('É promoção: ', promocao['eh_promocao'])
     print('Preço: ', promocao['preco_desconto'])
+    if promocao['eh_promocao']:
+        conn.execute(
+            """
+            INSERT INTO promocoes (mensagem_id, nome_item, preco_cheio, preco_desconto, cupom, url, loja, meio_pagamento) VALUES 
+            (%s, %s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (url) DO UPDATE SET 
+            
+                mensagem_id = EXCLUDED.mensagem_id,
+                nome_item = EXCLUDED.nome_item,
+                preco_cheio = EXCLUDED.preco_cheio,
+                preco_desconto = EXCLUDED.preco_desconto,
+                cupom = EXCLUDED.cupom,
+                loja = EXCLUDED.loja,
+                meio_pagamento = EXCLUDED.meio_pagamento,
+                atualizada_em = NOW();
+            """
+            ,
+            (
+                mensagem_id,
+                promocao['nome_item'],
+                promocao['preco_cheio'],
+                promocao['preco_desconto'],
+                promocao['cupom'],
+                promocao['url'],
+                promocao['loja'],
+                promocao['meio_pagamento']
+            )
+        )
+    conn.execute("UPDATE mensagens_cruas SET processada = true WHERE id = %s", (mensagem_id,))
