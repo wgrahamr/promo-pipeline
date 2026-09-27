@@ -2,8 +2,6 @@
 
 Pipeline que monitora grupos de promoções do WhatsApp, guarda cada mensagem recebida e usa IA generativa para transformar texto livre em dados estruturados: produto, preço, cupom, link e loja.
 
-> Projeto de estudo. O objetivo é entender cada peça do processo: webhooks, bancos de dados, integração com LLMs e automação.
-
 ---
 
 ## O problema
