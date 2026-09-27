@@ -1,0 +1,415 @@
+{%- macro brl(valor) -%}
+    {{ '{:,.2f}'.format(valor)|replace(',', '_')|replace('.', ',')|replace('_', '.') }}
+{%- endmacro -%}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promoções</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --fundo: #F3F5F8;
+            --papel: #FFFFFF;
+            --tinta: #1B2230;
+            --grafite: #5B6475;
+            --linha: #DFE3EA;
+            --marca: #FFE04A;
+            --corte: #D7263D;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --fundo: #161A22;
+                --papel: #1F2430;
+                --tinta: #ECEFF4;
+                --grafite: #A3ABBA;
+                --linha: #323948;
+                --marca: rgba(255, 224, 74, 0.32);
+                --corte: #FF6B7D;
+            }
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            background: var(--fundo);
+            color: var(--tinta);
+            font-family: "Archivo", system-ui, sans-serif;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .wrap {
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        /* Topo */
+        .topo {
+            padding-top: 40px;
+            padding-bottom: 24px;
+        }
+
+        .topo h1 {
+            margin: 0;
+            font-size: 44px;
+            font-weight: 800;
+            font-stretch: 70%;
+            line-height: 1;
+            letter-spacing: -0.01em;
+        }
+
+        .resumo {
+            margin: 8px 0 0;
+            color: var(--grafite);
+        }
+
+        /* Busca */
+        .busca {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 24px;
+        }
+
+        .busca input[type="search"] {
+            flex: 1 1 260px;
+            min-width: 0;
+            padding: 12px 14px;
+            font: inherit;
+            color: var(--tinta);
+            background: var(--papel);
+            border: 1px solid var(--linha);
+            border-radius: 8px;
+        }
+
+        .busca input[type="search"]::placeholder {
+            color: var(--grafite);
+        }
+
+        .filtro {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .filtro input {
+            width: 18px;
+            height: 18px;
+            margin: 0;
+            accent-color: var(--tinta);
+        }
+
+        .botao {
+            padding: 12px 20px;
+            font: inherit;
+            font-weight: 600;
+            color: var(--papel);
+            background: var(--tinta);
+            border: 0;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .limpar {
+            color: var(--grafite);
+        }
+
+        /* Lista de ofertas */
+        .lista {
+            list-style: none;
+            margin: 0 0 48px;
+            padding: 0;
+            background: var(--papel);
+            border: 1px solid var(--linha);
+            border-radius: 12px;
+        }
+
+        .oferta {
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 8px 24px;
+            padding: 20px;
+        }
+
+        .oferta + .oferta {
+            border-top: 1px solid var(--linha);
+        }
+
+        .categoria {
+            margin: 0 0 2px;
+            font-size: 14px;
+            color: var(--grafite);
+        }
+
+        .nome {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+            line-height: 1.3;
+        }
+
+        .nome a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        .nome a:hover {
+            text-decoration: underline;
+            text-underline-offset: 3px;
+        }
+
+        .detalhes {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px 16px;
+            margin-top: 10px;
+            font-size: 14px;
+            color: var(--grafite);
+        }
+
+        .cupom {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 3px 4px 3px 10px;
+            color: var(--tinta);
+            border: 1.5px dashed var(--grafite);
+            border-radius: 6px;
+        }
+
+        .cupom code {
+            font-family: inherit;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        .copiar {
+            padding: 2px 8px;
+            font: inherit;
+            font-size: 13px;
+            color: var(--tinta);
+            background: var(--fundo);
+            border: 0;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Preço */
+        .preco {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .de {
+            font-size: 14px;
+            color: var(--grafite);
+        }
+
+        .de s {
+            text-decoration-thickness: 1px;
+        }
+
+        .desconto {
+            margin-left: 6px;
+            font-weight: 700;
+            color: var(--corte);
+        }
+
+        .por {
+            display: inline-block;
+            margin-top: 2px;
+            padding: 0 4px;
+            font-size: 34px;
+            font-weight: 800;
+            font-stretch: 62%;
+            line-height: 1.1;
+            background: linear-gradient(transparent 58%, var(--marca) 58%, var(--marca) 92%, transparent 92%);
+        }
+
+        .por small {
+            font-size: 18px;
+            font-weight: 700;
+            margin-right: 2px;
+        }
+
+        .abrir {
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--tinta);
+        }
+
+        /* Estado vazio */
+        .vazio {
+            padding: 48px 20px;
+            text-align: center;
+            background: var(--papel);
+            border: 1px solid var(--linha);
+            border-radius: 12px;
+        }
+
+        .vazio p {
+            margin: 0 0 8px;
+        }
+
+        .vazio p:first-child {
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        /* Acessibilidade */
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible {
+            outline: 2px solid var(--tinta);
+            outline-offset: 2px;
+        }
+
+        /* Celular: preço embaixo do nome */
+        @media (max-width: 520px) {
+            .topo h1 { font-size: 36px; }
+            .oferta { grid-template-columns: 1fr; }
+            .preco { text-align: left; }
+            .botao { flex: 1; }
+        }
+    </style>
+</head>
+<body>
+    <header class="topo wrap">
+        <h1>Promoções</h1>
+        <p class="resumo">
+            {% if promocoes|length == 1 %}1 oferta{% else %}{{ promocoes|length }} ofertas{% endif %}
+            {% if periodo == '24h' %}nas últimas 24 horas{% endif %}
+            {% if q %}para “{{ q }}”{% endif %}
+        </p>
+    </header>
+
+    <form class="busca wrap" method="get">
+        <input type="search" name="q" value="{{ q }}" placeholder="Buscar pelo nome do produto" aria-label="Buscar pelo nome do produto">
+        <label class="filtro">
+            <input type="checkbox" name="periodo" value="24h" {% if periodo == '24h' %}checked{% endif %}>
+            Só as últimas 24h
+        </label>
+        <button class="botao" type="submit">Buscar</button>
+        {% if q or periodo %}
+            <a class="limpar" href="/">Limpar filtros</a>
+        {% endif %}
+    </form>
+
+    <main class="wrap">
+        {% if not promocoes %}
+            <div class="vazio">
+                <p>Nenhuma oferta encontrada</p>
+                <p>
+                    {% if q or periodo %}
+                        Tente outro termo ou <a href="/">veja todas as ofertas</a>.
+                    {% else %}
+                        As ofertas aparecem aqui assim que chegarem nos grupos monitorados.
+                    {% endif %}
+                </p>
+            </div>
+        {% else %}
+            <ul class="lista">
+                {% for p in promocoes %}
+                    <li class="oferta">
+                        <div>
+                            {% if p.categoria %}
+                                <p class="categoria">{{ p.categoria }}</p>
+                            {% endif %}
+                            <h2 class="nome">
+                                <a href="{{ p.url }}" target="_blank" rel="noopener">{{ p.nome_item }}</a>
+                            </h2>
+
+                            {% if p.cupom or p.loja or p.deadline %}
+                                <div class="detalhes">
+                                    {% if p.cupom %}
+                                        <span class="cupom">
+                                            Cupom <code>{{ p.cupom }}</code>
+                                            <button class="copiar" type="button" data-cupom="{{ p.cupom }}">Copiar</button>
+                                        </span>
+                                    {% endif %}
+                                    {% if p.loja %}
+                                        <span>{{ p.loja }}</span>
+                                    {% endif %}
+                                    {% if p.deadline %}
+                                        <span>Até {{ p.deadline.strftime('%d/%m às %H:%M') }}</span>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="preco">
+                            {% if p.preco_cheio and p.preco_cheio > p.preco_desconto %}
+                                <div class="de">
+                                    <s>R$ {{ brl(p.preco_cheio) }}</s>
+                                    <span class="desconto">−{{ ((1 - p.preco_desconto / p.preco_cheio) * 100)|round|int }}%</span>
+                                </div>
+                            {% endif %}
+                            <div class="por"><small>R$</small>{{ brl(p.preco_desconto) }}</div>
+                            <div>
+                                <a class="abrir" href="{{ p.url }}" target="_blank" rel="noopener">Abrir oferta</a>
+                            </div>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </main>
+
+    <script>
+        const form = document.querySelector(".busca");
+        const campo = form.querySelector('input[name="q"]');
+        let espera;
+
+        // Busca a página com os filtros atuais e troca só a lista e o resumo
+        async function atualizar() {
+            const endereco = "/?" + new URLSearchParams(new FormData(form));
+            const resposta = await fetch(endereco);
+            const nova = new DOMParser().parseFromString(await resposta.text(), "text/html");
+            document.querySelector("main").replaceWith(nova.querySelector("main"));
+            document.querySelector(".resumo").replaceWith(nova.querySelector(".resumo"));
+            history.replaceState(null, "", endereco);
+        }
+
+        // Digitando: espera 300 ms sem novas teclas antes de buscar
+        campo.addEventListener("input", function () {
+            clearTimeout(espera);
+            espera = setTimeout(atualizar, 300);
+        });
+
+        // Caixinha das 24h: atualiza na hora
+        form.addEventListener("change", function (e) {
+            if (e.target.name === "periodo") atualizar();
+        });
+
+        // Enter ou botão Buscar: atualiza sem recarregar a página
+        form.addEventListener("submit", function (e) {
+            e.preventDefault();
+            clearTimeout(espera);
+            atualizar();
+        });
+
+        // Botão Copiar: escuta no documento todo, porque a lista é substituída
+        document.addEventListener("click", function (e) {
+            const botao = e.target.closest(".copiar");
+            if (!botao) return;
+            navigator.clipboard.writeText(botao.dataset.cupom).then(function () {
+                botao.textContent = "Copiado";
+                setTimeout(function () { botao.textContent = "Copiar"; }, 1500);
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,14 +1,15 @@
 import os
 
-from flask import Flask, request
+from flask import Flask, request, render_template
 import psycopg
 from psycopg.types.json import Jsonb
+from psycopg.rows import dict_row
 from dotenv import load_dotenv
 
 app = Flask(__name__)
 
 load_dotenv()  # Carrega as variáveis de ambiente do arquivo .env
-conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True)
+conn = psycopg.connect(os.environ["DATABASE_URL"], autocommit=True, row_factory=dict_row)
 
 @app.route('/waha', methods=['POST'])
 def receber_webhook():
@@ -24,5 +25,38 @@ def receber_webhook():
     )
     return "ok", 200
 
+
+@app.route("/")
+def listar_promocoes():
+    q = request.args.get("q", "").strip()
+    periodo = request.args.get("periodo")
+
+    condicoes = []
+    parametros = {}
+
+    if q:
+        condicoes.append("p.nome_item ILIKE %(padrao)s")
+        parametros["padrao"] = f"%{q}%"
+
+    if periodo == "24h":
+        condicoes.append("p.atualizada_em > now() - interval '24 hours'")
+
+    where = "WHERE " + " AND ".join(condicoes) if condicoes else ""
+
+    promocoes = conn.execute(
+        f"""
+        SELECT p.nome_item, p.preco_cheio, p.preco_desconto, p.cupom,
+               p.loja, p.url, c.nome AS categoria, p.deadline
+        FROM promocoes p
+        LEFT JOIN categorias c ON c.id = p.categoria_id
+        {where}
+        ORDER BY p.atualizada_em DESC
+        LIMIT 50
+        """,
+        parametros,
+    ).fetchall()
+
+    return render_template("promocoes.html", promocoes=promocoes, q=q, periodo=periodo)
 app.run(host="0.0.0.0", port=8080, debug=False)
+
 
