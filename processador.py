@@ -1,5 +1,6 @@
-import os
 import json
+import os
+import time
 
 import psycopg
 from openai import OpenAI
@@ -30,57 +31,59 @@ INSTRUCOES = """
                 Nunca invente informações que não estejam na mensagem.
                 """
 
-
-resultado = conn.execute("SELECT id, payload->>'body' AS texto FROM mensagens_cruas WHERE NOT processada").fetchall()
-for mensagem_id, texto in resultado:
-    completion = client.chat.completions.create(
-        model="openai/gpt-oss-120b",
-        messages=[
-            {
-                "role": "system",
-                "content": INSTRUCOES
-             
-            },
-            {
-                "role": "user",
-                "content": texto
-            }
-        ],
-        temperature=0,
-        reasoning_effort="low",
-        response_format={"type": "json_object"},
-    )
-
-    promocao = json.loads(completion.choices[0].message.content)
-    print('Dicionário: ', promocao)
-    print('É promoção: ', promocao['eh_promocao'])
-    print('Preço: ', promocao['preco_desconto'])
-    if promocao['eh_promocao']:
-        conn.execute(
-            """
-            INSERT INTO promocoes (mensagem_id, nome_item, preco_cheio, preco_desconto, cupom, url, loja, meio_pagamento) VALUES 
-            (%s, %s, %s, %s, %s, %s, %s, %s)
-            ON CONFLICT (url) DO UPDATE SET 
-            
-                mensagem_id = EXCLUDED.mensagem_id,
-                nome_item = EXCLUDED.nome_item,
-                preco_cheio = EXCLUDED.preco_cheio,
-                preco_desconto = EXCLUDED.preco_desconto,
-                cupom = EXCLUDED.cupom,
-                loja = EXCLUDED.loja,
-                meio_pagamento = EXCLUDED.meio_pagamento,
-                atualizada_em = NOW();
-            """
-            ,
-            (
-                mensagem_id,
-                promocao['nome_item'],
-                promocao['preco_cheio'],
-                promocao['preco_desconto'],
-                promocao['cupom'],
-                promocao['url'],
-                promocao['loja'],
-                promocao['meio_pagamento']
-            )
+while True:
+    resultado = conn.execute("SELECT id, payload->>'body' AS texto FROM mensagens_cruas WHERE NOT processada ORDER BY id").fetchall()
+    print('Mensagens sendo processadas: ', len(resultado))
+    for mensagem_id, texto in resultado:
+        completion = client.chat.completions.create(
+            model="openai/gpt-oss-120b",
+            messages=[
+                {
+                    "role": "system",
+                    "content": INSTRUCOES
+                
+                },
+                {
+                    "role": "user",
+                    "content": texto
+                }
+            ],
+            temperature=0,
+            reasoning_effort="low",
+            response_format={"type": "json_object"},
         )
-    conn.execute("UPDATE mensagens_cruas SET processada = true WHERE id = %s", (mensagem_id,))
+
+        promocao = json.loads(completion.choices[0].message.content)
+        print('Dicionário: ', promocao)
+        print('É promoção: ', promocao['eh_promocao'])
+        print('Preço: ', promocao['preco_desconto'])
+        if promocao['eh_promocao']:
+            conn.execute(
+                """
+                INSERT INTO promocoes (mensagem_id, nome_item, preco_cheio, preco_desconto, cupom, url, loja, meio_pagamento) VALUES 
+                (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON CONFLICT (url) DO UPDATE SET 
+                
+                    mensagem_id = EXCLUDED.mensagem_id,
+                    nome_item = EXCLUDED.nome_item,
+                    preco_cheio = EXCLUDED.preco_cheio,
+                    preco_desconto = EXCLUDED.preco_desconto,
+                    cupom = EXCLUDED.cupom,
+                    loja = EXCLUDED.loja,
+                    meio_pagamento = EXCLUDED.meio_pagamento,
+                    atualizada_em = NOW();
+                """
+                ,
+                (
+                    mensagem_id,
+                    promocao['nome_item'],
+                    promocao['preco_cheio'],
+                    promocao['preco_desconto'],
+                    promocao['cupom'],
+                    promocao['url'],
+                    promocao['loja'],
+                    promocao['meio_pagamento']
+                )
+            )
+        conn.execute("UPDATE mensagens_cruas SET processada = true WHERE id = %s", (mensagem_id,))
+    time.sleep(60)  # Aguarda 60 segundos antes de verificar novamente
