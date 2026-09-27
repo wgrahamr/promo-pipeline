@@ -441,17 +441,6 @@ Alguns problemas reais encontrados durante o desenvolvimento:
 
 ---
 
-## Limitações e próximos passos
-
-- [ ] **Testes automatizados** para a extração e para as rotas
-- [ ] **Pool de conexões:** hoje cada serviço usa uma conexão criada na inicialização, e a recuperação de quedas depende do `restart` do Docker
-- [ ] **Servidor de produção** (gunicorn) no lugar do servidor de desenvolvimento do Flask
-- [ ] **Busca sem acento** com a extensão `unaccent` do PostgreSQL (hoje `tenis` não encontra "Tênis")
-- [ ] **Imagens em alta resolução:** a miniatura atual vem da prévia do link (32×32 px) e não existe quando a oferta é enviada como foto
-- [ ] **Histórico de preços:** hoje uma repostagem sobrescreve o preço anterior
-- [ ] **Identificação de repostagens:** a mesma oferta com outro link encurtado é tratada como uma promoção nova
-- [ ] **Migrações automáticas** na primeira inicialização do banco
-
 **Observação:** o WAHA usa o WhatsApp Web, e não a API oficial do WhatsApp. Para estudo, funciona bem. Em produção, existe o risco de bloqueio do número.
 
 ---
