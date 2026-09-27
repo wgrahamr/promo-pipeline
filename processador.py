@@ -86,4 +86,4 @@ while True:
                 )
             )
         conn.execute("UPDATE mensagens_cruas SET processada = true WHERE id = %s", (mensagem_id,))
-    time.sleep(60)  # Aguarda 60 segundos antes de verificar novamente
+    time.sleep(120)  # Aguarda 120 segundos antes de verificar novamente
